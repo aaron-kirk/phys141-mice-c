@@ -33,12 +33,11 @@ def accel_satellites(pos_satellites: np.ndarray, pos_majorStars: np.ndarray, G: 
         for j in range(m):
             r_vec = pos_satellites[j] - pos_majorStars[i] 
             r_mag = np.linalg.norm(r_vec) 
-            a[j] = a[j] - (G*M*r_vec/r_mag**3)
-    
+            a[j] = a[j] + (-G*M*r_vec/r_mag**3)
+
     return a
 
 def leapfrog(r_star: np.ndarray, v_star: np.ndarray, r_satellites: np.ndarray, v_satellites: np.ndarray, dt: float, G: float, M: float):
-    n = r_satellites[:,0].size
 
     # major stars leapfrog
     v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
@@ -58,7 +57,7 @@ def leapfrog(r_star: np.ndarray, v_star: np.ndarray, r_satellites: np.ndarray, v
 G = 4.498*10**(-6) # kpc^3/(M_solar * Earth_year^2)
 M = 1 # 1 M_solar
 dt = 0.01 # 1 earth_year
-T = 1 # total time in earth_year
+T = 3 # total time in earth_year
 step = int(T/dt) # total number of steps, should be INT
 L_scale = 1 # kpc
 v_scale = 1 * (1/(3.08*10**31)) * (3.15*10**7/1)**2 # from cm/s^2 to kpc/year^2
@@ -78,53 +77,66 @@ velocity_star = df_center[['V_x', 'V_y', 'V_z']].to_numpy()
 position_satellite = df_comp[['X', 'Y', 'Z']].to_numpy()
 velocity_satellite= df_comp[['V_x', 'V_y', 'V_z']].to_numpy()
 
+
 # store initial
 out_star.append(position_star)
 out_satellite.append(position_satellite)
+test = 0
+
+position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
 
 # loop
-for i in range(int(step)):
-    position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
-    out_star.append(position_star)
-    out_satellite.append(position_satellite)
+# for i in range(1):
+#     position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
+#     if i == 10:
+#         test = position_satellite
+#     out_star.append(position_star)
+#     out_satellite.append(position_satellite)
 
-out_star = np.array(out_star)
-out_satellite = np.array(out_satellite)
+# out_star = np.array(out_star)
+# out_satellite = np.array(out_satellite)
 
-star = out_star.reshape((step+1)*2,3)
+# star = out_star.reshape((step+1)*2,3)
+
+# fig = plt.figure(figsize=(10,10))
+# ax = plt.axes(projection = '3d')
+
+# ax.scatter3D(test[:,0], test[:,1], test[:,2])
+# ax.set_zlim(-60,60)
+
+# plt.show()
 
 
+# # Create the figure and axes for the plot
+# fig = plt.figure(figsize=(12,10))
+# ax = fig.add_subplot(111, projection='3d')
 
-# Create the figure and axes for the plot
-fig = plt.figure(figsize=(12,10))
-ax = fig.add_subplot(111, projection='3d')
 
+# x = star[:,0]
+# print(x)
+# y = star[:,1]
+# z = star[:,2]
+# ax.view_init(90, -90, 0)
+# # Create the initial point in the plot
+# point, = ax.plot(x[0], y[0], z[0], 'bo')
 
-x = star[:,0]
-print(x)
-y = star[:,1]
-z = star[:,2]
-ax.view_init(90, -90, 0)
-# Create the initial point in the plot
-point, = ax.plot(x[0], y[0], z[0], 'bo')
+# # Define the update function for the animation
+# def update(frame):
+#     # Update the position of the point
+#     point.set_data(x[frame:frame+2], y[frame:frame+2])
+#     point.set_3d_properties(z[frame:frame+2])
+#     return point,
 
-# Define the update function for the animation
-def update(frame):
-    # Update the position of the point
-    point.set_data(x[frame:frame+2], y[frame:frame+2])
-    point.set_3d_properties(z[frame:frame+2])
-    return point,
+# # Create the animation object
+# anim = FuncAnimation(fig, update, frames = len(x), blit=True, interval = 50)
 
-# Create the animation object
-anim = FuncAnimation(fig, update, frames = len(x), blit=True, interval = 50)
-
-ax.set_xlabel("x (kpc)")
-ax.set_ylabel("y (kpc)")
-ax.set_zlabel("z (kpc)")
-ax.set_xlim(-50, 50)
-ax.set_ylim(-50, 50)
-ax.set_zlim(-50, 50)
-ax.set_title('Mice Collision')
-# Show the plot
-plt.legend()
-plt.show()
+# ax.set_xlabel("x (kpc)")
+# ax.set_ylabel("y (kpc)")
+# ax.set_zlabel("z (kpc)")
+# ax.set_xlim(-50, 50)
+# ax.set_ylim(-50, 50)
+# ax.set_zlim(-50, 50)
+# ax.set_title('Mice Collision')
+# # Show the plot
+# plt.legend()
+# plt.show()
