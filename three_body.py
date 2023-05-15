@@ -29,27 +29,41 @@ def accel_satellites(pos_satellites: np.ndarray, pos_majorStars: np.ndarray, G: 
     m = pos_satellites[:,0].size # number of satellites
     a = np.zeros((m, 3))
 
+
     for i in range(n):
         for j in range(m):
             r_vec = pos_satellites[j] - pos_majorStars[i] 
             r_mag = np.linalg.norm(r_vec) 
             a[j] = a[j] + (-G*M*r_vec/r_mag**3)
 
+
     return a
 
 def leapfrog(r_star: np.ndarray, v_star: np.ndarray, r_satellites: np.ndarray, v_satellites: np.ndarray, dt: float, G: float, M: float):
 
+    # # major stars leapfrog
+    # v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
+    # r_star = r_star+ v_star*dt
+    # v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
+
     # major stars leapfrog
     v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
     r_star = r_star+ v_star*dt
+    a1 = accel_majorStars(r_star, G, M)
     v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
+
+    # # satellites leapfrog
+    # v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
+    # r_satellites = r_satellites + v_satellites*dt
+    # v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
 
     # satellites leapfrog
     v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
     r_satellites = r_satellites + v_satellites*dt
+    a2 = accel_satellites(r_satellites, r_star, G, M)
     v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
 
-    return r_star, v_star,r_satellites, v_satellites 
+    return r_star, v_star,r_satellites, v_satellites, a1, a2
 
 
 
@@ -77,13 +91,25 @@ velocity_star = df_center[['V_x', 'V_y', 'V_z']].to_numpy()
 position_satellite = df_comp[['X', 'Y', 'Z']].to_numpy()
 velocity_satellite= df_comp[['V_x', 'V_y', 'V_z']].to_numpy()
 
+print(velocity_satellite)
 
 # store initial
 out_star.append(position_star)
 out_satellite.append(position_satellite)
-test = 0
 
-position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
+
+test = 0 # debug use
+
+
+################ debug use
+for i in range(30):
+    position_star, velocity_star, position_satellite, velocity_satellite, acc_star, acc_sate = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
+    if i == 20:
+        print('position')
+        print(position_satellite)
+        print('acc')
+        print(acc_sate)
+############### debugging
 
 # loop
 # for i in range(1):
