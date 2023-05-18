@@ -41,31 +41,29 @@ def accel_satellites(pos_satellites: np.ndarray, pos_majorStars: np.ndarray, G: 
 def leapfrog(r_star: np.ndarray, v_star: np.ndarray, r_satellites: np.ndarray, v_satellites: np.ndarray, dt: float, G: float, M: float):
 
     # major stars leapfrog
-    v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M*10**11)
+    v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
     r_star = r_star+ v_star*dt
-    v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M*10**11)
+    v_star = v_star+ 0.5*dt*accel_majorStars(r_star, G, M)
 
 
 
     # satellites leapfrog
-    v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M*10**11)
+    v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
     r_satellites = r_satellites + v_satellites*dt
-    v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M*10**11)
+    v_satellites = v_satellites + 0.5*dt*accel_satellites(r_satellites, r_star, G, M)
 
 
 
     return r_star, v_star,r_satellites, v_satellites
 
 
-
 # Constants
-G = 4.498*10**(-6) # kpc^3/(M_solar * Earth_year^2)
-M = 1 # 1 M_solar
-dt = 0.01 # 1 earth_year
-T = 3 # total time in earth_year
+G = 4491.9 # kpc^3/(M * T)
+M = 1 # 10^11 solar mass
+dt = 0.05 # 1 T = 10^8 years
+T = 17 # total time in earth_year
 step = int(T/dt) # total number of steps, should be INT
 L_scale = 1 # kpc
-v_scale = 1 * (1/(3.08*10**31)) * (3.15*10**7/1)**2 # from cm/s^2 to kpc/year^2
 
 # reading initialization from csv files
 # and convert to numpy vectors
@@ -77,69 +75,66 @@ out_star = []
 out_satellite = []
 
 # converting position and velocity to np.narray
-position_star = df_center[['X', 'Y', 'Z']].to_numpy()
-velocity_star = df_center[['V_x', 'V_y', 'V_z']].to_numpy()
-position_satellite = df_comp[['X', 'Y', 'Z']].to_numpy()
-velocity_satellite= df_comp[['V_x', 'V_y', 'V_z']].to_numpy()
+position_star = df_center[['x', 'y', 'z']].to_numpy()
+velocity_star = df_center[['v_x', 'v_y', 'v_z']].to_numpy()
+position_satellite = df_comp[['x', 'y', 'z']].to_numpy()
+velocity_satellite= df_comp[['v_x', 'v_y', 'v_z']].to_numpy()
+
 
 # store initial
 out_star.append(position_star)
 out_satellite.append(position_satellite)
 
+test= 0
 
-test = 0 # debug use
-
-#loop
+# time evolution 
 for i in range(int(step)):
     position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
-    if i == 13:
-        test = position_satellite
     out_star.append(position_star)
+    if i == 56:
+        test = position_satellite
     out_satellite.append(position_satellite)
 
+# convert position array to numpy array
 out_star = np.array(out_star)
 out_satellite = np.array(out_satellite)
-star = out_star.reshape((step+1)*2,3)
+
+# assign satellite to star to plot satellite, too lazy to change the name in the below plotting code
+out_star = out_satellite
 
 
-fig = plt.figure(figsize=(10,10))
-ax = plt.axes(projection = '3d')
 
-ax.scatter3D(test[:,0], test[:,1], test[:,2])
+
+
+
+############# plotting satellites
+
+# Create the figure and axes for the plot
+fig = plt.figure(figsize=(12,10))
+ax = fig.add_subplot(111, projection='3d')
+
+time_label = ax.text2D(0.5, 0.95, '', ha='center', va='top', transform=ax.transAxes)
+
+# Create the initial point in the plot
+point, = ax.plot(out_star[0,:,0], out_star[0,:,1], out_star[0,:,2], 'bo')
+
+# Define the update function for the animation
+def update(frame):
+    # Update the position of the point
+    point.set_data(out_star[frame][:,0], out_star[frame][:,1])
+    point.set_3d_properties(out_star[frame][:,2])
+    time = frame * dt
+    time_label.set_text(f'Time: {time:.2f}')  # Format the time value with 2 decimal places
+    return point,
+
+# Create the animation object
+anim = FuncAnimation(fig, update, frames = step, blit=True, interval = 100)
+
+ax.set_xlabel("x (kpc)")
+ax.set_ylabel("y (kpc)")
+ax.set_zlabel("z (kpc)")
+ax.set_title('Mice Collision')
+ax.set_xlim(-120,-20)
+ax.set_ylim(-60,60)
 ax.set_zlim(-60,60)
-
-plt.show()
-
-# # Create the figure and axes for the plot
-# fig = plt.figure(figsize=(12,10))
-# ax = fig.add_subplot(111, projection='3d')
-
-
-# x = star[:,0]
-# print(x)
-# y = star[:,1]
-# z = star[:,2]
-# ax.view_init(90, -90, 0)
-# # Create the initial point in the plot
-# point, = ax.plot(x[0], y[0], z[0], 'bo')
-
-# # Define the update function for the animation
-# def update(frame):
-#     # Update the position of the point
-#     point.set_data(x[frame:frame+2], y[frame:frame+2])
-#     point.set_3d_properties(z[frame:frame+2])
-#     return point,
-
-# # Create the animation object
-# anim = FuncAnimation(fig, update, frames = len(x), blit=True, interval = 50)
-
-# ax.set_xlabel("x (kpc)")
-# ax.set_ylabel("y (kpc)")
-# ax.set_zlabel("z (kpc)")
-# ax.set_xlim(-50, 50)
-# ax.set_ylim(-50, 50)
-# ax.set_zlim(-50, 50)
-# ax.set_title('Mice Collision')
-# # Show the plot
-# plt.legend()
-# plt.show()
+anim.save('animation.mp4', writer='ffmpeg')
