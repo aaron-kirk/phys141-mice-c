@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import numba 
+from numba import jit 
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
+import time
 
 # unit system
 # 
@@ -85,11 +86,18 @@ velocity_satellite= df_comp[['v_x', 'v_y', 'v_z']].to_numpy()
 out_star.append(position_star)
 out_satellite.append(position_satellite)
 
+
+start_time = time.time()
+
 # time evolution 
 for i in range(int(step)):
     position_star, velocity_star, position_satellite, velocity_satellite = leapfrog(position_star, velocity_star, position_satellite, velocity_satellite, dt = dt, G = G, M = M)
     out_star.append(position_star)
     out_satellite.append(position_satellite)
+
+end_time = time.time()
+
+print(end_time-start_time)
 
 # convert position array to numpy array
 out_star = np.array(out_star)
