@@ -5,6 +5,7 @@ import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 import time
+e=0.03
 
 # unit system
 # 
@@ -17,7 +18,7 @@ def accel_majorStars(pos: np.ndarray, G : float, M : float):
 
     r_vec = A_pos - B_pos 
     r_mag = np.linalg.norm(r_vec) 
-    acc = -(G*M*r_vec/r_mag**3)
+    acc = -(G*M*r_vec/(r_mag**2+e**2)**(3/2))
     A_acc = acc # accel of mass body A
     B_acc = -acc # accel of mass body B
 
@@ -34,7 +35,7 @@ def accel_satellites(pos_satellites: np.ndarray, pos_majorStars: np.ndarray, G: 
         for j in range(m):
             r_vec = pos_satellites[j] - pos_majorStars[i] 
             r_mag = np.linalg.norm(r_vec) 
-            a[j] = a[j] + (-G*M*r_vec/r_mag**3)
+            a[j] = a[j] + (-G*M*r_vec/(r_mag**2+e**2)**(3/2))
 
 
     return a
@@ -97,8 +98,6 @@ for i in range(int(step)):
 
 end_time = time.time()
 
-print(end_time-start_time)
-
 # convert position array to numpy array
 out_star = np.array(out_star)
 out_satellite = np.array(out_satellite)
@@ -116,6 +115,7 @@ out_star = out_satellite
 # Create the figure and axes for the plot
 fig = plt.figure(figsize=(12,10))
 ax = fig.add_subplot(111, projection='3d')
+ax.view_init(elev=90, azim=-90, roll=0)
 
 time_label = ax.text2D(0.5, 0.95, '', ha='center', va='top', transform=ax.transAxes)
 
@@ -138,7 +138,7 @@ ax.set_xlabel("x (kpc)")
 ax.set_ylabel("y (kpc)")
 ax.set_zlabel("z (kpc)")
 ax.set_title('Mice Collision')
-ax.set_xlim(-120,-20)
-ax.set_ylim(-60,60)
-ax.set_zlim(-60,60)
-anim.save('animation.mp4', writer='ffmpeg')
+# ax.set_xlim(-60,60)
+# ax.set_ylim(-60,60)
+# ax.set_zlim(-60,60)
+anim.save('animation_topview.mp4', writer='ffmpeg')
